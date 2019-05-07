@@ -1,0 +1,75 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Libraries
+```{r}
+library(zoo)
+```
+
+## Load the Data 
+```{r}
+# read from csv
+cocoa = read.csv("../data/CHRIS-LIFFE_C1.csv")
+
+# reverse the order because the first observations are the most recent
+cocoa = cocoa[nrow(cocoa):1, ]
+
+# convert "Date" to Date Type 
+cocoa$Date = as.Date(cocoa$Date)
+```
+
+```{r}
+class(cocoa)
+```
+
+## Fill in Weekends with NA
+```{r}
+# reference dataframe with all days including weekends
+grid.df = data.frame(Date = seq(as.Date(cocoa[1,1]), as.Date(cocoa[nrow(cocoa), 1]), by="day"))
+
+# original dataframe now has NA weekends
+cocoa = merge(cocoa, grid.df, all=TRUE)
+```
+
+## Convert Settle Price to Time Series
+```{r}
+cocoa.day.ts = ts(cocoa$Settle, start=1993, frequency=260)
+class(cocoa.day.ts)
+
+# !!! to get the original values you need as.Date(as.numeric(time(tt)), origin = "1970-01-01") 
+```
+
+## Trying with zoo
+```{r}
+cocoa.day.z = zooreg(cocoa$Settle, start=as.Date("1993-09-01"))
+class(cocoa.day.z)
+
+# !!! time(z) will return the date values
+```
+
+## Plot
+```{r}
+plot(cocoa.day.ts)
+```
+
+# Decomposition
+```{r}
+plot(decompose(na.approx(cocoa.day.ts)))
+```
+
+# Autocorrelation
+```{r}
+cocoa.day.ts = ts(cocoa$Settle, start=1993, frequency=1) # changing the frequency also change the label of the acf plot
+acf(na.approx(cocoa.day.ts))$acf[2]
+```
+
+```{r}
+plot(cocoa.day.ts[1:6588], cocoa.day.ts[3:6590])
+```
+
+```{r}
+plot(100*(1-(cocoa.day.ts[2:6589]/cocoa.day.ts[1:6588])), 100*(1-(cocoa.day.ts[3:6590]/cocoa.day.ts[2:6589])))
+```
+
